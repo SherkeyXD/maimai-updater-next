@@ -1,9 +1,15 @@
-# maimaidx-prober-updater-android
+# maimai-updater-next
 
-基于项目 [BaoLianDeng](https://github.com/madeye/BaoLianDeng) 改编的纯本地更新舞萌数据 Android app
+快速将你的舞萌数据上传至水鱼查分器
 
-下载链接: [https://maimaidx-prober-updater-android.bakapiano.com/](https://maimaidx-prober-updater-android.bakapiano.com/)
+# TODO
 
-欢迎加入 dev 开发群来共同维护这个项目~
++ [x] 多账号管理
++ [] 进度显示
++ [] 动画优化
 
-QQ 群号: 850526534
+## 致谢
+
+本项目使用了来自下列项目的代码
++ https://github.com/madeye/BaoLianDeng
++ https://github.com/bakapiano/maimaidx-prober-updater-android

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        
+        <item
+            android:id="@+id/nav_home"
+            android:icon="@drawable/ic_home_24"
+            android:title="首页" />
+            
+    </group>
+    
+    <group android:id="@+id/group_settings">
+        
+        <item
+            android:id="@+id/nav_theme"
+            android:icon="@drawable/ic_palette_24"
+            android:title="@string/theme_settings" />
+            
+        <item
+            android:id="@+id/nav_proxy"
+            android:icon="@drawable/ic_vpn_key_24"
+            android:title="@string/proxy_settings" />
+            
+    </group>
+    
+    <group android:id="@+id/group_info">
+        
+        <item
+            android:id="@+id/nav_update"
+            android:icon="@drawable/ic_system_update_24"
+            android:title="@string/check_update" />
+            
+        <item
+            android:id="@+id/nav_about"
+            android:icon="@drawable/ic_info_24"
+            android:title="@string/about" />
+            
+    </group>
+
+</menu>

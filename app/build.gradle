@@ -1,0 +1,97 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdk compile_version
+    namespace 'com.bakapiano.maimai.updater'
+
+    defaultConfig {
+        applicationId "com.bakapiano.maimai.updater"
+        minSdk min_version
+        targetSdk target_version
+        versionCode 1
+        versionName "2.1.0"
+    }
+    
+    buildFeatures {
+        buildConfig true
+    }
+    // debug和release使用相同签名，以便用debug包覆盖release包从而调试，
+    // 如果没有，就会使用默认debug签名，
+    def signingFile = rootProject.file('key.properties')
+    String sha1 = null
+    if (signingFile.exists()) {
+        def input = signingFile.newInputStream()
+        def p = new Properties()
+        p.load(input)
+        input.close()
+        // 签名文件存在才配置签名，
+        def jks = rootProject.file(p['storeFile'])
+        if (jks.exists()) {
+            signingConfigs {
+                config {
+                    keyAlias p['keyAlias']
+                    keyPassword p['keyPassword']
+                    storeFile jks
+                    storePassword p['storePassword']
+                    v1SigningEnabled true
+                    v2SigningEnabled true
+                }
+            }
+            buildTypes {
+                debug.signingConfig signingConfigs.config
+                release.signingConfig signingConfigs.config
+            }
+            def signingConfig = signingConfigs.config
+            if (signingConfig != null) {
+                //noinspection UnnecessaryQualifiedReference
+                def keyStore = java.security.KeyStore.getInstance(
+                        signingConfig.getStoreType() != null ?
+                                signingConfig.getStoreType() : KeyStore.getDefaultType())
+                FileInputStream fis = new FileInputStream(signingConfig.getStoreFile())
+                keyStore.load(fis, signingConfig.getStorePassword().toCharArray())
+                fis.close()
+                char[] keyPassword = signingConfig.getKeyPassword().toCharArray()
+                //noinspection UnnecessaryQualifiedReference
+                def entry = keyStore.getEntry(
+                        signingConfig.getKeyAlias(),
+                        new java.security.KeyStore.PasswordProtection(keyPassword))
+                if (entry != null) {
+                    //noinspection UnnecessaryQualifiedReference
+                    def digest = java.security.MessageDigest.getInstance("SHA-1")
+                    sha1 = digest.digest(entry.getCertificate().encoded).encodeHex().toString()
+                }
+            }
+        }
+    }
+    if (sha1 == null) {
+        defaultConfig.buildConfigField('String', "SIGNATURE", 'null')
+    } else {
+        defaultConfig.buildConfigField('String', "SIGNATURE", '"' + sha1 + '"')
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.cardview:cardview:1.0.0'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.drawerlayout:drawerlayout:1.2.0'
+    implementation 'androidx.navigation:navigation-fragment:2.7.6'
+    implementation 'androidx.navigation:navigation-ui:2.7.6'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel:2.7.0'
+    implementation 'androidx.lifecycle:lifecycle-livedata:2.7.0'
+    implementation 'androidx.preference:preference:1.2.1'
+    testImplementation "junit:junit:$junit_version"
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'net.ripe.commons:commons-ip-math:1.23'
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
+}

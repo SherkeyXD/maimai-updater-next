@@ -1,0 +1,107 @@
+name: CI/CD
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build App
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          show-progress: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'dragonwell'
+
+      - name: Generate version name
+        id: version
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION_NAME="${GITHUB_REF#refs/tags/}"
+          else
+            BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+            VERSION_NAME="${GITHUB_REPOSITORY#*/}-${BRANCH_NAME}-$(date +'%Y%m%d%H%M%S')"
+          fi
+          echo "name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "Generated version: $VERSION_NAME"
+
+      - name: Setup signing
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          echo "${{ secrets.SIGNING_KEY }}" | base64 -d > signing.jks
+          echo "${{ secrets.KEY_PROPERTIES }}" > key.properties
+          echo "storeFile=signing.jks" >> key.properties
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build APK
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            ./gradlew assembleRelease
+          else
+            ./gradlew assembleDebug
+          fi
+
+      - name: Rename APK
+        run: |
+          mkdir -p build
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            mv app/build/outputs/apk/release/*.apk build/${{ steps.version.outputs.name }}-android.apk
+          else
+            mv app/build/outputs/apk/debug/*.apk build/${{ steps.version.outputs.name }}-android-debug.apk
+          fi
+
+      - name: Upload APK as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.version.outputs.name }}-apk
+          path: build/*.apk
+          retention-days: 30
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version name
+        id: version
+        run: |
+          VERSION_NAME="${GITHUB_REF#refs/tags/}"
+          echo "name=$VERSION_NAME" >> $GITHUB_OUTPUT
+
+      - name: Download APK
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.version.outputs.name }}-apk
+          path: build/
+
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f "CHANGELOG.md" ]; then
+            RELEASE_NOTES=$(cat changelog.md)
+          else
+            RELEASE_NOTES="Release ${{ steps.version.outputs.name }}
+
+          gh release create ${{ steps.version.outputs.name }} \
+            --title "${{ steps.version.outputs.name }}" \
+            --notes "$RELEASE_NOTES" \
+            build/${{ steps.version.outputs.name }}-android.apk

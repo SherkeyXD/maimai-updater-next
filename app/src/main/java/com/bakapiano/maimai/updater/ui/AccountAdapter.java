@@ -27,6 +27,7 @@ public class AccountAdapter extends RecyclerView.Adapter<AccountAdapter.AccountV
     public interface OnAccountClickListener {
         void onAccountClick(MainActivity.Account account);
         default void onAccountDelete(MainActivity.Account account) {}
+        default void onAccountEdit(MainActivity.Account account) {}
     }
     
     public AccountAdapter(List<MainActivity.Account> accounts, OnAccountClickListener listener) {
@@ -63,6 +64,7 @@ public class AccountAdapter extends RecyclerView.Adapter<AccountAdapter.AccountV
         private ShapeableImageView accountAvatar;
         private TextView accountNameItem;
         private TextView accountStatusItem;
+        private ImageView editAccountButton;
         private ImageView deleteAccountButton;
         
         public AccountViewHolder(@NonNull View itemView) {
@@ -71,12 +73,20 @@ public class AccountAdapter extends RecyclerView.Adapter<AccountAdapter.AccountV
             accountAvatar = itemView.findViewById(R.id.account_avatar);
             accountNameItem = itemView.findViewById(R.id.account_name_item);
             accountStatusItem = itemView.findViewById(R.id.account_status_item);
+            editAccountButton = itemView.findViewById(R.id.edit_account_button);
             deleteAccountButton = itemView.findViewById(R.id.delete_account_button);
             
             itemView.setOnClickListener(v -> {
                 int position = getAdapterPosition();
                 if (position != RecyclerView.NO_POSITION && listener != null) {
                     listener.onAccountClick(accounts.get(position));
+                }
+            });
+            
+            editAccountButton.setOnClickListener(v -> {
+                int position = getAdapterPosition();
+                if (position != RecyclerView.NO_POSITION && listener != null) {
+                    listener.onAccountEdit(accounts.get(position));
                 }
             });
             
